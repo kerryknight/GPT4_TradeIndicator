@@ -1,12 +1,12 @@
-# OptionAlpha Webhook Integration with OpenAI GPT
+# Option Alpha Webhook Integration with OpenAI GPT
 
-This script serves as a webhook for an Option Alpha trading bot. It uses OpenAI's GPT API to analyze major world events and determine if the market conditions are favorable for trading. Designed for use with an iron condor trading strategy, the script triggers either a "Trade" or "No Trade" action based on the predicted market stability, pausing trades if volatility is expected.
+This script serves as a webhook for an Option Alpha trading bot. It uses OpenAI's GPT API to analyze major world events and determine if market conditions are favorable for trading. Designed for use with an iron condor trading strategy, the script triggers either a "Trade" or "No Trade" action based on the predicted market stability, pausing trades if volatility is expected.
 
 ## Features
 
 - **World Event Analysis**: Queries OpenAI’s GPT-4 model for recent significant world events and assesses their potential impact on the S&P 500 (SPX).
 - **Automated Trade Control**: Decides to either enable or pause trading based on potential market volatility.
-- **Secure API Key Handling**: Retrieves the OpenAI API key from a secure file location to avoid hardcoding sensitive information in the script.
+- **Secure API Key and URL Handling**: Retrieves the OpenAI API key and Option Alpha webhook URLs from secure files stored outside the codebase.
 
 ## Setup
 
@@ -32,15 +32,36 @@ This script serves as a webhook for an Option Alpha trading bot. It uses OpenAI'
    pip install -r requirements.txt
    ```
 
-3. **Set Up API Key**:
-   - Save your OpenAI API key in a file at `/etc/secrets/IndicatorKey.txt`.
-   - Make sure the file has restricted permissions:
+3. **Set Up API Key and Webhook URLs**:
+   - Create a secure directory to store your secrets:
      ```bash
-     chmod 600 /etc/secrets/IndicatorKey.txt
+     sudo mkdir -p /etc/secrets
+     sudo chmod 700 /etc/secrets
      ```
 
-4. **Configure Webhook URLs**:
-   - Update the `TRADE_URL` and `NO_TRADE_URL` variables in the script with the appropriate Option Alpha webhook URLs for enabling and pausing trades.
+   - **Save the OpenAI API Key**:
+     - Create a file `/etc/secrets/IndicatorKey.txt` and paste your API key into it.
+     - Ensure that the file has restricted permissions:
+       ```bash
+       echo "your_openai_api_key_here" | sudo tee /etc/secrets/IndicatorKey.txt > /dev/null
+       sudo chmod 600 /etc/secrets/IndicatorKey.txt
+       ```
+
+   - **Save the Option Alpha Webhook URLs**:
+     - Create a file `/etc/secrets/WebhookURLs.txt` with the following content:
+       ```plaintext
+       TRADE_URL=https://app.optionalpha.com/hook/your_trade_url_here
+       NO_TRADE_URL=https://app.optionalpha.com/hook/your_no_trade_url_here
+       ```
+     - Set the file permissions:
+       ```bash
+       sudo chmod 600 /etc/secrets/WebhookURLs.txt
+       ```
+
+     **Important**: Replace `your_trade_url_here` and `your_no_trade_url_here` with your actual Option Alpha webhook URLs.
+
+4. **Verify File Permissions**:
+   - Ensure that both `/etc/secrets/IndicatorKey.txt` and `/etc/secrets/WebhookURLs.txt` are only readable by the application (permissions set to `600`).
 
 ## Usage
 
@@ -67,17 +88,21 @@ This script serves as a webhook for an Option Alpha trading bot. It uses OpenAI'
    - If GPT predicts stability, the script triggers the **Trade URL** to enable trading.
    - If volatility is expected, it triggers the **No Trade URL** to pause trading.
 
-## Environment Security
+## Secure Configuration
 
-This script securely retrieves the OpenAI API key from a file (`/etc/secrets/IndicatorKey.txt`) instead of hardcoding it in the code. Ensure the file has restricted read permissions for enhanced security.
+This script retrieves sensitive information (OpenAI API key and webhook URLs) from secure files stored outside the codebase:
 
-## File Structure
+- **OpenAI API Key**: Stored in `/etc/secrets/IndicatorKey.txt`.
+- **Webhook URLs**: Stored in `/etc/secrets/WebhookURLs.txt`, with `TRADE_URL` and `NO_TRADE_URL` as key-value pairs.
+
+Both files should have restrictive permissions (`chmod 600`) to ensure that only the application can read them.
+
+## File Structure for Secrets
 
 ```
-.
-├── option_alpha_webhook.py       # Main script
-├── requirements.txt              # Python dependencies
-└── README.md                     # This README file
+/etc/secrets/
+├── IndicatorKey.txt       # Contains the OpenAI API key
+└── WebhookURLs.txt        # Contains TRADE_URL and NO_TRADE_URL
 ```
 
 ## Dependencies
@@ -94,9 +119,17 @@ pip install -r requirements.txt
 ## Troubleshooting
 
 1. **API Key Not Found**: Ensure `/etc/secrets/IndicatorKey.txt` exists and contains only the API key.
-2. **Webhook Not Triggering**: Check the logs to ensure that the correct URLs are set for `TRADE_URL` and `NO_TRADE_URL`.
-3. **Permission Errors**: Verify that `/etc/secrets/IndicatorKey.txt` has restrictive permissions (`chmod 600`).
+2. **Webhook URLs Not Found**: Ensure `/etc/secrets/WebhookURLs.txt` exists and contains `TRADE_URL` and `NO_TRADE_URL`.
+3. **Permission Errors**: Verify that `/etc/secrets/IndicatorKey.txt` and `/etc/secrets/WebhookURLs.txt` have restrictive permissions (`chmod 600`).
 
 ## Contributing
 
 Feel free to submit issues or pull requests if you encounter bugs or have feature suggestions.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+--- 
+
+This README now includes all the relevant details about securely storing and configuring the API key and webhook URLs, making it clear to users and contributors how the script handles sensitive information.
