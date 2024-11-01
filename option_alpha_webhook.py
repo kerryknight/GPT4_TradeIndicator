@@ -4,10 +4,13 @@ import os
 
 app = Flask(__name__)
 
-# Retrieve the API key from environment variables
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("API key not found. Please set the OPENAI_API_KEY environment variable.")
+# Load the API key from /etc/secrets/IndicatorKey.txt
+API_KEY_FILE_PATH = "/etc/secrets/IndicatorKey.txt"
+try:
+    with open(API_KEY_FILE_PATH, 'r') as file:
+        OPENAI_API_KEY = file.read().strip()  # Read and strip any newline characters
+except FileNotFoundError:
+    raise ValueError(f"API key file not found at {API_KEY_FILE_PATH}")
 
 API_URL = "https://api.openai.com/v1/completions"
 TRADE_URL = "https://app.optionalpha.com/hook/H7IpT8jlMTe56eb3fdeeed3b8692f1809/fbcbdf14ba6977acfbabd4dddc8536592fe3d9"
