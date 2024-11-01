@@ -1,7 +1,3 @@
-Here's a sample README file for the `option_alpha_webhook.py` script:
-
----
-
 # Option Alpha Webhook Integration with OpenAI GPT
 
 This script serves as a webhook for an Option Alpha trading bot. It uses OpenAI's GPT API to analyze major world events and determine if the market conditions are favorable for trading. Designed for use with an iron condor trading strategy, the script triggers either a "Trade" or "No Trade" action based on the predicted market stability, pausing trades if volatility is expected.
