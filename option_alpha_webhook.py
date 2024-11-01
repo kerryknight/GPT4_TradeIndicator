@@ -4,17 +4,37 @@ import os
 
 app = Flask(__name__)
 
-# Load the API key from /etc/secrets/IndicatorKey.txt
+# Paths to secret files
 API_KEY_FILE_PATH = "/etc/secrets/IndicatorKey.txt"
+WEBHOOK_URLS_FILE_PATH = "/etc/secrets/WebhookURLs.txt"
+
+# Load the OpenAI API key from file
 try:
     with open(API_KEY_FILE_PATH, 'r') as file:
-        OPENAI_API_KEY = file.read().strip()  # Read and strip any newline characters
+        OPENAI_API_KEY = file.read().strip()
 except FileNotFoundError:
     raise ValueError(f"API key file not found at {API_KEY_FILE_PATH}")
 
+# Load the Trade and No Trade webhook URLs from file
+trade_url = None
+no_trade_url = None
+try:
+    with open(WEBHOOK_URLS_FILE_PATH, 'r') as file:
+        for line in file:
+            key, value = line.strip().split('=')
+            if key == 'TRADE_URL':
+                trade_url = value
+            elif key == 'NO_TRADE_URL':
+                no_trade_url = value
+except FileNotFoundError:
+    raise ValueError(f"Webhook URLs file not found at {WEBHOOK_URLS_FILE_PATH}")
+
+# Ensure both URLs were loaded
+if not trade_url or not no_trade_url:
+    raise ValueError("Webhook URLs not properly configured in the secret file.")
+    
+# OpenAI API URL
 API_URL = "https://api.openai.com/v1/completions"
-TRADE_URL = "https://app.optionalpha.com/hook/H7IpT8jlMTe56eb3fdeeed3b8692f1809/fbcbdf14ba6977acfbabd4dddc8536592fe3d9"
-NO_TRADE_URL = "https://app.optionalpha.com/hook/H7IpT8jlMT76e7caa8265bd535724bc9e/38f5df815e1bbac01b7390b70eac24aa774096"
 
 def ask_gpt(prompt):
     headers = {
