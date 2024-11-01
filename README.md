@@ -23,7 +23,7 @@ This script serves as a webhook for an Option Alpha trading bot. It uses OpenAI'
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/option_alpha_webhook.git
+   git clone https://github.com/Nathan-Strodtbeck/GPT4_TradeIndicator.git
    cd option_alpha_webhook
    ```
 
