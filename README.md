@@ -129,7 +129,3 @@ Feel free to submit issues or pull requests if you encounter bugs or have featur
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
-
---- 
-
-This README now includes all the relevant details about securely storing and configuring the API key and webhook URLs, making it clear to users and contributors how the script handles sensitive information.
