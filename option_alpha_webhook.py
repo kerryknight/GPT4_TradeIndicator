@@ -94,11 +94,11 @@ def option_alpha_trigger():
         # Step 3: Determine if we should trigger the trade or no-trade webhook
         if is_trade_recommended(impact_analysis):
             # If GPT suggests stability, trigger trade URL
-            success = trigger_option_alpha(TRADE_URL)
+            success = trigger_option_alpha(trade_url)
             message = "Market conditions are stable; trading triggered." if success else "Failed to trigger trading."
         else:
             # If GPT suggests volatility, trigger no-trade URL
-            success = trigger_option_alpha(NO_TRADE_URL)
+            success = trigger_option_alpha(no_trade_url)
             message = "High volatility detected; trading paused." if success else "Failed to trigger no-trade."
 
         # Output the result message
