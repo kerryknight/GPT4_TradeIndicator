@@ -33,8 +33,7 @@ except FileNotFoundError:
 if not trade_url or not no_trade_url:
     raise ValueError("Webhook URLs not properly configured in the secret file.")
     
-# OpenAI API URL
-API_URL = "https://api.openai.com/v1/completions"
+API_URL = "https://api.openai.com/v1/chat/completions"
 
 def ask_gpt(prompt):
     headers = {
@@ -43,12 +42,14 @@ def ask_gpt(prompt):
     }
     data = {
         "model": "gpt-4",
-        "prompt": prompt,
+        "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 150,
     }
     response = requests.post(API_URL, headers=headers, json=data)
+    if response.status_code != 200:
+        raise Exception(f"OpenAI API request failed: {response.text}")
     result = response.json()
-    return result["choices"][0]["text"].strip()
+    return result["choices"][0]["message"]["content"].strip()
 
 def fetch_world_events():
     # First prompt to fetch world events
