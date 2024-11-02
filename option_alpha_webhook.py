@@ -1,13 +1,13 @@
 from flask import Flask, jsonify
 import requests
 import os
+import json
 
 app = Flask(__name__)
 
 # Paths to secret files
 API_KEY_FILE_PATH = "/etc/secrets/IndicatorKey.txt"
 WEBHOOK_URLS_FILE_PATH = "/etc/secrets/WebhookURLs.txt"
-
 # Load the OpenAI API key from file
 try:
     with open(API_KEY_FILE_PATH, 'r') as file:
@@ -60,13 +60,19 @@ def analyze_impact(events):
     # Second prompt to analyze impact on SPX
     prompt = (
         f"Based on historical data and your best judgment, "
-        f"will any of these events affect the price of SPX by more than 1.5 basis points?\n\n{events}"
+        f"will any of these events affect the price of SPX by more than 1.5 basis points? "
+        f"Please respond in JSON format: {{\"impact\": \"Yes\" or \"No\", \"explanation\": \"Your explanation.\"}}\n\n{events}"
     )
-    return ask_gpt(prompt)
+    response = ask_gpt(prompt)
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse GPT response as JSON. Response was: {response}. Error: {e}")
+        return {"impact": "Unknown", "explanation": "Unable to parse ChatGPT JSON response."}
 
 def is_trade_recommended(impact_analysis):
-    # Check if GPT's response suggests stability by looking for "no" as the response
-    return "no" in impact_analysis.lower()
+    impact = impact_analysis.get("impact", "").lower()
+    return impact == "no"
 
 def trigger_option_alpha(url):
     try:
@@ -98,6 +104,7 @@ def option_alpha_trigger():
         # Output the result message
         return jsonify({"status": "success", "message": message}), 200
     except Exception as e:
+        print(f"An error occurred: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
