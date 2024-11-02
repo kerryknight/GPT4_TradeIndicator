@@ -1,13 +1,13 @@
 from flask import Flask, jsonify
 import requests
 import os
+import json
 
 app = Flask(__name__)
 
 # Paths to secret files
 API_KEY_FILE_PATH = "/etc/secrets/IndicatorKey.txt"
 WEBHOOK_URLS_FILE_PATH = "/etc/secrets/WebhookURLs.txt"
-
 # Load the OpenAI API key from file
 try:
     with open(API_KEY_FILE_PATH, 'r') as file:
@@ -33,8 +33,7 @@ except FileNotFoundError:
 if not trade_url or not no_trade_url:
     raise ValueError("Webhook URLs not properly configured in the secret file.")
     
-# OpenAI API URL
-API_URL = "https://api.openai.com/v1/completions"
+API_URL = "https://api.openai.com/v1/chat/completions"
 
 def ask_gpt(prompt):
     headers = {
@@ -43,12 +42,14 @@ def ask_gpt(prompt):
     }
     data = {
         "model": "gpt-4",
-        "prompt": prompt,
+        "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 150,
     }
     response = requests.post(API_URL, headers=headers, json=data)
+    if response.status_code != 200:
+        raise Exception(f"OpenAI API request failed: {response.text}")
     result = response.json()
-    return result["choices"][0]["text"].strip()
+    return result["choices"][0]["message"]["content"].strip()
 
 def fetch_world_events():
     # First prompt to fetch world events
@@ -59,13 +60,19 @@ def analyze_impact(events):
     # Second prompt to analyze impact on SPX
     prompt = (
         f"Based on historical data and your best judgment, "
-        f"will any of these events affect the price of SPX by more than 1.5 basis points?\n\n{events}"
+        f"will any of these events affect the price of SPX by more than 1.5 basis points? "
+        f"Please respond in JSON format: {{\"impact\": \"Yes\" or \"No\", \"explanation\": \"Your explanation.\"}}\n\n{events}"
     )
-    return ask_gpt(prompt)
+    response = ask_gpt(prompt)
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse GPT response as JSON. Response was: {response}. Error: {e}")
+        return {"impact": "Unknown", "explanation": "Unable to parse ChatGPT JSON response."}
 
 def is_trade_recommended(impact_analysis):
-    # Check if GPT's response suggests stability by looking for "no" as the response
-    return "no" in impact_analysis.lower()
+    impact = impact_analysis.get("impact", "").lower()
+    return impact == "no"
 
 def trigger_option_alpha(url):
     try:
@@ -87,16 +94,17 @@ def option_alpha_trigger():
         # Step 3: Determine if we should trigger the trade or no-trade webhook
         if is_trade_recommended(impact_analysis):
             # If GPT suggests stability, trigger trade URL
-            success = trigger_option_alpha(TRADE_URL)
+            success = trigger_option_alpha(trade_url)
             message = "Market conditions are stable; trading triggered." if success else "Failed to trigger trading."
         else:
             # If GPT suggests volatility, trigger no-trade URL
-            success = trigger_option_alpha(NO_TRADE_URL)
+            success = trigger_option_alpha(no_trade_url)
             message = "High volatility detected; trading paused." if success else "Failed to trigger no-trade."
 
         # Output the result message
         return jsonify({"status": "success", "message": message}), 200
     except Exception as e:
+        print(f"An error occurred: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
